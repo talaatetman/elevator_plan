@@ -215,6 +215,7 @@ function processFinalData(type, sw, sd, doorS, outThick, sillClr, inSill, dbgR, 
         data.dbgCar = dbgR;
         data.dbgCwt = sw - (2 * 5 + 2 * 6);
         data.distCarRailToDoor = outThick + sillClr + inSill + (cdR / 2);
+        data.distCarRailToinDoor = sillClr + inSill + (cdR / 2);
         data.distCarRailToCwtRail = (cdR / 2) + 15;
         data.distCwtRailToWall = 15;
         data.platformereaR= ((dbgR- 10) * cdR) / 10000;
@@ -225,6 +226,7 @@ function processFinalData(type, sw, sd, doorS, outThick, sillClr, inSill, dbgR, 
         data.dbgCar = dbgS;
         data.dbgCwt = sd - (outThick + sillClr + inSill + 5 + 6 + 5 + 6); // تبسيط بناء على الخصومات المذكورة
         data.distCarRailToDoor = outThick + sillClr + inSill + (cdS / 2);
+        data.distCarRailToinDoor = sillClr + inSill + (cdS / 2);
         data.distCwtRailToSideWall = 15;
         data.distCarRailToCwtRail = "جانبي (متعامد)";
         data.platformereaS= ((dbgS- 10) * cdS) / 10000;
@@ -243,6 +245,8 @@ function displayResults(data, sw, sd, layoutType) {
         <tr><td>البعد بين دليلي الصاعدة (DBG)</td><td>${data.dbgCar}</td></tr>
         <tr><td>البعد بين دليلي الثقل (DBG)</td><td>${data.dbgCwt}</td></tr>
         <tr><td>المسافة من دليل الصاعدة الى الامام شاملة سمك الباب الخارجى والخلوص</td><td>${data.distCarRailToDoor}</td></tr>
+    <tr><td>المسافة من دليل الصاعدة الى حافة الباب الخارجى من الداخل</td><td>${data.distCarRailToinDoor}</td></tr>    
+        
         ${layoutType === 'Rear' ? `<tr><td>المسافة من دليل الصاعدة لدليل الثقل</td><td>${data.distCarRailToCwtRail}</td></tr>` : ''}
         <tr><td>المسافة من دليل الثقل للحائط</td><td>${data.distCwtRailToSideWall || data.distCwtRailToWall}</td></tr>
 <tr><td>مساحة الصاعدة (بدون المدخل)</td><td>${data.platformereaS || data.platformereaR} متر مربع</td></tr>
