@@ -204,6 +204,15 @@ function calculateLayout() {
         }
     }
 
+   // التحقق من توافق مقاس الباب مع عرض الصاعدة المتاح
+    let currentDbg = (layoutType === "Rear") ? dbgCarRear : dbgCarSide;
+    let availableCarWidth = currentDbg - 10;
+
+    if (doorS > availableCarWidth) {
+        alert(`خطأ فني: مقاس فتحة الباب (${doorS} سم) أكبر من عرض الصاعدة المتاح (${availableCarWidth} سم). \nيرجى مراجعة عرض البئر أو اختيار مقاس باب أصغر.`);
+        return;
+    }
+    // ====================
     const results = processFinalData(layoutType, sw, sd, doorS, outerDoorThick, sillClearance, innerSillDepth, dbgCarRear, dbgCarSide, carDepthRear, carDepthSide);
     displayResults(results, sw, sd, layoutType);
 }
