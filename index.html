@@ -149,21 +149,20 @@ canvas {
 
     <div id="results">
         <div id="recommendationMsg" class="recommendation"></div>
-        
-        <div id="canvasContainer">
-            <canvas id="elevatorCanvas" width="600" height="600"></canvas>
-        </div>
 
         <table class="output-table">
             <thead>
                 <tr>
                     <th>البيان</th>
-                    <th>القيمة (سم)</th>
+                    <th>القيمة</th>
                 </tr>
             </thead>
             <tbody id="resultTableBody">
                 </tbody>
         </table>
+                <div id="canvasContainer">
+            <canvas id="elevatorCanvas" width="600" height="600"></canvas>
+        </div>
     </div>
 </div>
 
@@ -230,6 +229,16 @@ function processFinalData(type, sw, sd, doorS, outThick, sillClr, inSill, dbgR, 
         data.platformereaR= ((dbgR- 10) * cdR) / 10000;
         data.passengersR= Math.floor(data.platformereaR / 0.24);
         data.ratedloadR= data.passengersR * 80;
+        data.CwtAxCheckR= Math.sqrt(Math.pow(data.distCarRailToCwtRail, 2) + Math.pow(data.dbgCwt, 2)).toFixed(1);
+// حساب نصف العرض بين الدلائل (الضلع الأول)
+let halfDbg = data.dbgCar / 2; 
+
+// الضلع الثاني: المسافة من محور الدلائل إلى عتبة الباب (المسافة التي حسبناها سابقاً)
+let distToSill = data.distCarRailToinDoor; 
+
+// تطبيق قاعدة فيثاغورث لحساب الوتر (التأكد من التربيع)
+// الوتر = الجذر التربيبي لـ (نصف العرض² + المسافة للباب²)
+data.pythagorasCheckR = Math.sqrt(Math.pow(halfDbg, 2) + Math.pow(distToSill, 2)).toFixed(1);
     } else {
         data.layoutName = "ثقل جانبي";
         data.dbgCar = dbgS;
@@ -240,7 +249,16 @@ function processFinalData(type, sw, sd, doorS, outThick, sillClr, inSill, dbgR, 
         data.distCarRailToCwtRail = "جانبي (متعامد)";
         data.platformereaS= ((dbgS- 10) * cdS) / 10000;
         data.passengersS= Math.floor(data.platformereaS / 0.24);
-        data.ratedloadS= data.passengersS * 80;   
+        data.ratedloadS= data.passengersS * 80;  
+// حساب نصف العرض بين الدلائل (الضلع الأول)
+let halfDbg = data.dbgCar / 2; 
+
+// الضلع الثاني: المسافة من محور الدلائل إلى عتبة الباب (المسافة التي حسبناها سابقاً)
+let distToSill = data.distCarRailToinDoor; 
+
+// تطبيق قاعدة فيثاغورث لحساب الوتر (التأكد من التربيع)
+// الوتر = الجذر التربيبي لـ (نصف العرض² + المسافة للباب²)
+data.pythagorasCheckS = Math.sqrt(Math.pow(halfDbg, 2) + Math.pow(distToSill, 2)).toFixed(1);         
     }
     return data;
 }
@@ -251,16 +269,17 @@ function displayResults(data, sw, sd, layoutType) {
 
     const tbody = document.getElementById('resultTableBody');
     tbody.innerHTML = `
-        <tr><td>البعد بين دليلي الصاعدة (DBG)</td><td>${data.dbgCar}</td></tr>
-        <tr><td>البعد بين دليلي الثقل (DBG)</td><td>${data.dbgCwt}</td></tr>
-        <tr><td>المسافة من دليل الصاعدة الى الامام شاملة سمك الباب الخارجى والخلوص</td><td>${data.distCarRailToDoor}</td></tr>
-    <tr><td>المسافة من دليل الصاعدة الى حافة الباب الخارجى من الداخل</td><td>${data.distCarRailToinDoor}</td></tr>    
-        
-        ${layoutType === 'Rear' ? `<tr><td>المسافة من دليل الصاعدة لدليل الثقل</td><td>${data.distCarRailToCwtRail}</td></tr>` : ''}
-        <tr><td>المسافة من دليل الثقل للحائط</td><td>${data.distCwtRailToSideWall || data.distCwtRailToWall}</td></tr>
-<tr><td>مساحة الصاعدة (بدون المدخل)</td><td>${data.platformereaS || data.platformereaR} متر مربع</td></tr>
-<tr><td>عدد الركاب المناسب للمساحة</td><td>${data.passengersS || data.passengersR} راكب</td></tr>
-<tr><td>الحمولة المقننة</td><td>${data.ratedloadS || data.ratedloadR} كيلو جرام</td></tr>
+        <tr><td>البعد بين دليلي الصاعدة (DBG)</td><td>${data.dbgCar} سم</td></tr>
+        <tr><td>البعد بين دليلي الثقل (DBG)</td><td>${data.dbgCwt} سم</td></tr>
+        <tr><td>المسافة من دليل الصاعدة الى الامام شاملة سمك الباب الخارجى والخلوص</td><td>${data.distCarRailToDoor} سم</td></tr>
+        <tr><td>المسافة من دليل الصاعدة الى حافة الباب الخارجى من الداخل</td><td>${data.distCarRailToinDoor} سم</td></tr>    
+    ${layoutType === 'Rear' ? `<tr><td>المسافة من دليل الصاعدة لدليل الثقل</td><td>${data.distCarRailToCwtRail} سم</td></tr><tr><td style="color: #e67e22; font-weight: bold;">المسافة من دليل الصاعدة اليمين لدليل الثقل اليسار والعكس</td><td style="color: #e67e22; font-weight: bold;">${data.CwtAxCheckR} سم</td></tr>` : ''}
+        <tr><td>المسافة من دليل الثقل للحائط</td><td>${data.distCwtRailToSideWall || data.distCwtRailToWall} سم</td></tr> 
+        <tr><td style="color: #e67e22; font-weight: bold;">المسافة من منتصف الباب الخارجى الى دليل الصاعدة</td>
+        <td style="color: #e67e22; font-weight: bold;">${data.pythagorasCheckS || data.pythagorasCheckR} سم</td></tr>
+        <tr><td>مساحة الصاعدة (بدون المدخل)</td><td>${data.platformereaS || data.platformereaR} متر مربع</td></tr>
+        <tr><td>عدد الركاب المناسب للمساحة</td><td>${data.passengersS || data.passengersR} راكب</td></tr>
+       <tr><td>الحمولة المقننة</td><td>${data.ratedloadS || data.ratedloadR} كيلو جرام</td></tr>
 `
 ;
 
@@ -305,6 +324,7 @@ function drawElevator(sw, sd, type, data) {
     ctx.fillStyle = "#000";
     ctx.fillText("الباب داخل البئر فى الاعلى و الدلائل باللون الأحمر للصاعدة والأزرق للثقل", 410, 30);
 }
+
 </script>
 <div class="calculation-guide">
     <h2><i class="fas fa-calculator"></i> معايير وطريقة الحساب الفنية</h2>
