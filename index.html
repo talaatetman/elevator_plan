@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مخطط بئر المصعد الذكي</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 20px; color: #333; }
+        .container { max-width: 95%; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; background: #ecf0f1; padding: 20px; border-radius: 8px; }
+        .input-group { display: flex; flex-direction: column; }
+        label { margin-bottom: 8px; font-weight: bold; }
+        input, select { padding: 10px; border: 1px solid #bdc3c7; border-radius: 5px; font-size: 16px; }
+        button { grid-column: span 2; padding: 15px; background-color: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; transition: 0.3s; }
+        button:hover { background-color: #219150; }
+        #results { margin-top: 30px; display: none; }
+        .output-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .output-table th, .output-table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        .output-table th { background-color: #34495e; color: white; }
+      /* تنسيق الحاوية لتناسب عرض الشاشة بالكامل */
+#canvasContainer {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 20px;
+    border: 2px solid #333;
+    background: #fff;
+    overflow: hidden; /* منع الحاجة للتمرير اليدوي */
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+/* تنسيق الرسم ليكون مرناً (Responsive) */
+canvas {
+    max-width: 100%; /* جعل الرسم يتقلص ليتناسب مع عرض الموبايل */
+    height: auto !important; /* الحفاظ على التناسب بين العرض والارتفاع */
+    background-color: #fff;
+    display: block;
+}
+        .recommendation { background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; margin-bottom: 15px; border-right: 5px solid #0c5460; }
+        .calculation-guide {
+        margin-top: 40px;
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border-top: 5px solid #27ae60;
+    }
+    .calculation-guide h2 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 25px;
+        font-size: 24px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    .guide-section {
+        margin-bottom: 25px;
+    }
+    .guide-section h3 {
+        color: #e67e22;
+        font-size: 18px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+    .guide-section h3::before {
+        content: "•";
+        margin-left: 10px;
+        font-size: 25px;
+    }
+    .guide-list {
+        list-style: none;
+        padding-right: 20px;
+    }
+    .guide-list li {
+        margin-bottom: 8px;
+        line-height: 1.6;
+        position: relative;
+    }
+    .guide-list li::before {
+        content: "-";
+        position: absolute;
+        right: -15px;
+        color: #3498db;
+        font-weight: bold;
+    }
+    .footer-signature {
+        margin-top: 40px;
+        text-align: center;
+        padding: 20px;
+        background: #2c3e50;
+        color: white;
+        border-radius: 8px;
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+    .highlight-blue { color: #2980b9; font-weight: bold; }
+    /* تنسيق خاص بالشاشات الصغيرة (الموبايل) */
+@media (max-width: 600px) {
+    .input-grid {
+        grid-template-columns: 1fr; /* تحويل الأعمدة لتظهر أسفل بعضها */
+        gap: 15px;
+        padding: 15px;
+    }
+
+    button {
+        grid-column: span 1 !important; /* جعل الزر يأخذ عرض العمود الوحيد */
+    }
+}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>تطبيق تخطيط بئر المصعد (نظام تنزيل الخيوط)</h1>
+    <div class="input-grid">
+        <div class="input-group">
+            <label>عرض البئر (W) سم:</label>
+            <input type="number" id="shaftW" value="140">
+        </div>
+        <div class="input-group">
+            <label>عمق البئر (D) سم:</label>
+            <input type="number" id="shaftD" value="140">
+        </div>
+        <div class="input-group">
+            <label>مقاس فتحة الباب الخارجى (سم):</label>
+            <input type="number" id="doorSize" value="70">
+        </div>
+        <div class="input-group">
+            <label>نوع الباب الخارجى:</label>
+            <select id="outerDoorType">
+                <option value="semi">نصف اتوماتيك</option>
+                <option value="auto">اتوماتيك</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>نوع الباب الداخلى:</label>
+            <select id="innerDoorType">
+                <option value="beam">شعاع ضوئى - بدون باب داخلى</option>
+                <option value="folding">فولدينج</option>
+                <option value="auto">اتوماتيك</option>
+             </select>
+        </div>
+        <button onclick="calculateLayout()">توليد المخطط والبيانات</button>
+    </div>
+
+    <div id="results">
+        <div id="recommendationMsg" class="recommendation"></div>
+
+        <table class="output-table">
+            <thead>
+                <tr>
+                    <th>البيان</th>
+                    <th>القيمة</th>
+                </tr>
+            </thead>
+            <tbody id="resultTableBody">
+                </tbody>
+        </table>
+                <div id="canvasContainer">
+            <canvas id="elevatorCanvas" width="600" height="600"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+function calculateLayout() {
+    const sw = parseFloat(document.getElementById('shaftW').value);
+    const sd = parseFloat(document.getElementById('shaftD').value);
+    const doorS = parseFloat(document.getElementById('doorSize').value);
+    const outerT = document.getElementById('outerDoorType').value;
+    const innerT = document.getElementById('innerDoorType').value;
+
+    // 1. حساب الخصومات من العمق
+    let sillClearance = (innerT === 'auto') ? 3 : (innerT === 'folding' ? 2.5 : 2);
+    let innerSillDepth = 11;
+    let outerDoorThick = (outerT === 'auto') ? 15 : 6;
+    
+    // حسابات الثقل الخلفي (Rear CWT)
+    let rearCwtSpace = 30; // 15 خلف الثقل و 15 بينه وبين الصاعدة حسب الملاحظات
+    let carDepthRear = sd - (outerDoorThick + sillClearance + innerSillDepth + rearCwtSpace + 0); // 0 خلوص خلفي
+    let dbgCarRear = sw - (2 * 5 + 2 * 7); // عرض البئر - (2*كابولى + 2*دليل)
+    let areaRear = (dbgCarRear - 10) * carDepthRear;
+
+    // حسابات الثقل الجانبي (Side CWT)
+    let sideCwtSpace = 35; // 5 كمرة + 30 خلوص ثقل
+    let carDepthSide = sd - (outerDoorThick + sillClearance + innerSillDepth + 6); // 6 خلوص خلفي
+    let dbgCarSide = (sw - sideCwtSpace) - (2 * 5 + 2 * 7);
+    let areaSide = (dbgCarSide - 10) * carDepthSide;
+
+    // المفاضلة
+    let layoutType = "Rear";
+    if (sw > sd) {
+        // نختار المساحة الأكبر وشكل أقرب للمربع (نسبة العرض للعمق تقترب من 1)
+        let ratioRear = Math.abs(1 - ((dbgCarRear-10)/carDepthRear));
+        let ratioSide = Math.abs(1 - ((dbgCarSide-10)/carDepthSide));
+        
+        if (areaSide > areaRear || (areaSide > areaRear * 0.9 && ratioSide < ratioRear)) {
+            layoutType = "Side";
+        }
+    }
+// 1. التحقق العام (يطبق على كل أنواع الأبواب): هل مقاس الباب أكبر من عرض الصاعدة؟
+    let currentDbg = (layoutType === "Rear") ? dbgCarRear : dbgCarSide;
+    let availableCarWidth = currentDbg - 10;
+
+    if (doorS > availableCarWidth) {
+        alert(`خطأ فني: مقاس فتحة الباب (${doorS} سم) أكبر من عرض الصاعدة المتاح (${availableCarWidth} سم). \nيرجى مراجعة عرض البئر أو اختيار مقاس باب أصغر.`);
+        return;
+    }
+
+    // 2. التحقق الخاص (فقط في حالة الباب الداخلي الأوتوماتيك): قيود مساحة تخزين الضلف
+    let doorFactor = doorS + 7; 
+    let isDoorValid = true;
+    let doorAdvice = "✅ مقاس الباب متوافق مع عرض الصاعدة المتاح.";
+
+    if (innerT === 'auto') {
+        if (layoutType === "Rear") {
+            // قاعدة الثقل الخلفي للباب الأوتوماتيك: (الباب + 7) يجب ألا يتجاوز نصف عرض البئر
+            if (doorFactor > (sw / 2)) {
+                isDoorValid = false;
+                alert(`⚠️ تنبيه للباب الأوتوماتيك: (مقاس الباب + 7 سم = ${doorFactor}) يتجاوز نصف عرض البئر (${sw / 2}). لا يمكن تخزين ضلف الباب الأوتوماتيك في هذا الوضع.`);
+            } else {
+                doorAdvice = "✅ الباب الأوتوماتيك السنتر او الجانبى متوافق هندسياً مع نظام الثقل الخلفي.";
+            }
+        } else {
+            // قاعدة الثقل الجانبي للباب الأوتوماتيك: التحقق من المساحة المتاحة بجانب الثقل
+            let limitSide = (currentDbg / 2) + 12 + 35;
+            if (doorFactor > limitSide) {
+                isDoorValid = false;
+                alert(`⚠️ خطأ فني: مقاس الباب الأوتوماتيك + 7 سم (${doorFactor}) يتجاوز المساحة المتاحة للثقل الجانبي (${limitSide.toFixed(1)}).`);
+            } else {
+                doorAdvice = "✅ المقاسات تسمح بتركيب باب أوتوماتيك جانبى لتخزين الضلف ناحية الثقل الجانبي.";
+            }
+        }
+    } else {
+        // في حالة فولدينج أو شعاع ضوئي: يتم تجاهل قيود الأوتوماتيك والاكتفاء بالتحقق العام السابق
+        doorAdvice = `✅ نظام الباب (${innerT === 'folding' ? 'فولدينج' : 'بدون باب داخلي'}) متوافق مع أبعاد البئر وعرض الصاعدة.`;
+    }
+
+    if (!isDoorValid) return; // إيقاف التنفيذ إذا فشل التحقق الخاص بالأوتوماتيك
+
+    // إرسال البيانات للمعالجة النهائية مع إضافة رسالة النصيحة[cite: 5]
+    const results = processFinalData(layoutType, sw, sd, doorS, outerDoorThick, sillClearance, innerSillDepth, dbgCarRear, dbgCarSide, carDepthRear, carDepthSide);
+    results.doorAdvice = doorAdvice; 
+    results.isAuto = (innerT === 'auto');
+    results.doorFactor = doorFactor;
+
+    displayResults(results, sw, sd, layoutType);
+}
+
+function processFinalData(type, sw, sd, doorS, outThick, sillClr, inSill, dbgR, dbgS, cdR, cdS) {
+    let data = {};
+    if (type === "Rear") {
+        data.layoutName = "ثقل خلفي";
+        data.dbgCar = dbgR;
+        data.dbgCwt = sw - (2 * 5 + 2 * 6);
+        data.distCarRailToDoor = outThick + sillClr + inSill + (cdR / 2);
+        data.distCarRailToinDoor = sillClr + inSill + (cdR / 2);
+        data.distCarRailToCwtRail = (cdR / 2) + 15;
+        data.distCwtRailToWall = 15;
+        data.platformereaR= ((dbgR- 10) * cdR) / 10000;
+        data.passengersR= Math.floor(data.platformereaR / 0.24);
+        data.ratedloadR= data.passengersR * 80;
+        data.CwtAxCheckR= Math.sqrt(Math.pow(data.distCarRailToCwtRail, 2) + Math.pow(data.dbgCwt, 2)).toFixed(1);
+// حساب نصف العرض بين الدلائل (الضلع الأول)
+let halfDbg = data.dbgCar / 2; 
+
+// الضلع الثاني: المسافة من محور الدلائل إلى عتبة الباب (المسافة التي حسبناها سابقاً)
+let distToSill = data.distCarRailToinDoor; 
+
+// تطبيق قاعدة فيثاغورث لحساب الوتر (التأكد من التربيع)
+// الوتر = الجذر التربيبي لـ (نصف العرض² + المسافة للباب²)
+data.pythagorasCheckR = Math.sqrt(Math.pow(halfDbg, 2) + Math.pow(distToSill, 2)).toFixed(1);
+    } else {
+        data.layoutName = "ثقل جانبي";
+        data.dbgCar = dbgS;
+        data.dbgCwt = sd - (outThick + sillClr + inSill + 5 + 6 + 5 + 6); // تبسيط بناء على الخصومات المذكورة
+        data.distCarRailToDoor = outThick + sillClr + inSill + (cdS / 2);
+        data.distCarRailToinDoor = sillClr + inSill + (cdS / 2);
+        data.distCwtRailToSideWall = 15;
+        data.distCarRailToCwtRail = "جانبي (متعامد)";
+        data.platformereaS= ((dbgS- 10) * cdS) / 10000;
+        data.passengersS= Math.floor(data.platformereaS / 0.24);
+        data.ratedloadS= data.passengersS * 80;  
+// حساب نصف العرض بين الدلائل (الضلع الأول)
+let halfDbg = data.dbgCar / 2; 
+
+// الضلع الثاني: المسافة من محور الدلائل إلى عتبة الباب (المسافة التي حسبناها سابقاً)
+let distToSill = data.distCarRailToinDoor; 
+
+// تطبيق قاعدة فيثاغورث لحساب الوتر (التأكد من التربيع)
+// الوتر = الجذر التربيبي لـ (نصف العرض² + المسافة للباب²)
+data.pythagorasCheckS = Math.sqrt(Math.pow(halfDbg, 2) + Math.pow(distToSill, 2)).toFixed(1);         
+    }
+    return data;
+}
+
+function displayResults(data, sw, sd, layoutType) {
+    document.getElementById('results').style.display = 'block';
+    // عرض رسالة التوافق بناءً على المنطق الجديد[cite: 5]
+    document.getElementById('recommendationMsg').innerHTML = `<strong>نظام التوزيع: ${data.layoutName} بناءً على أفضل مساحة صاعدة متاحة.</strong><br>${data.doorAdvice}`;
+    const tbody = document.getElementById('resultTableBody');
+    let htmlContent = `
+        <tr><td>البعد بين دليلي الصاعدة (DBG)</td><td>${data.dbgCar} سم</td></tr>
+        <tr><td>البعد بين دليلي الثقل (DBG)</td><td>${data.dbgCwt} سم</td></tr>
+        <tr><td>المسافة من دليل الصاعدة الى الامام شاملة سمك الباب الخارجى والخلوص</td><td>${data.distCarRailToDoor} سم</td></tr>
+        <tr><td>المسافة من دليل الصاعدة الى حافة الباب الخارجى من الداخل</td><td>${data.distCarRailToinDoor} سم</td></tr>    
+    ${layoutType === 'Rear' ? `<tr><td>المسافة من دليل الصاعدة لدليل الثقل</td><td>${data.distCarRailToCwtRail} سم</td></tr><tr><td style="color: #e67e22; font-weight: bold;">المسافة من دليل الصاعدة اليمين لدليل الثقل اليسار والعكس</td><td style="color: #e67e22; font-weight: bold;">${data.CwtAxCheckR} سم</td></tr>` : ''}
+        <tr><td>المسافة من دليل الثقل للحائط</td><td>${data.distCwtRailToSideWall || data.distCwtRailToWall} سم</td></tr> 
+        <tr><td style="color: #e67e22; font-weight: bold;">المسافة من منتصف الباب الخارجى الى دليل الصاعدة</td>
+        <td style="color: #e67e22; font-weight: bold;">${data.pythagorasCheckS || data.pythagorasCheckR} سم</td></tr>
+        <tr><td>مساحة الصاعدة (بدون المدخل)</td><td>${(data.platformereaS || data.platformereaR).toFixed(2)} م²</td></tr>
+        <tr><td>عدد الركاب المناسب للمساحة</td><td>${data.passengersS || data.passengersR} راكب</td></tr>
+       <tr><td>الحمولة المقننة</td><td>${data.ratedloadS || data.ratedloadR} كيلو جرام</td></tr>
+   `;
+    
+    tbody.innerHTML = htmlContent;
+
+    drawElevator(sw, sd, layoutType, data);
+}
+
+function drawElevator(sw, sd, type, data) {
+    const canvas = document.getElementById('elevatorCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const scale = Math.min(500/sw, 500/sd);
+    const offsetX = (600 - sw * scale) / 2;
+    const offsetY = (600 - sd * scale) / 2;
+
+    // رسم البئر
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(offsetX, offsetY, sw * scale, sd * scale);
+
+    // رسم دليلي الصاعدة (نقاط الخيوط)
+    ctx.fillStyle = "red";
+    if (type === "Rear") {
+        // أدلة الصاعدة يمين ويسار بالمنتصف
+        let railY = offsetY + data.distCarRailToDoor * scale;
+        ctx.fillRect(offsetX + (sw - data.dbgCar)/2 * scale - 5, railY, 10, 10);
+        ctx.fillRect(offsetX + (sw + data.dbgCar)/2 * scale - 5, railY, 10, 10);
+        
+        // أدلة الثقل خلفي
+        let cwtY = offsetY + sd * scale - 15 * scale;
+        ctx.fillStyle = "blue";
+        ctx.fillRect(offsetX + (sw - data.dbgCwt)/2 * scale - 5, cwtY, 10, 10);
+        ctx.fillRect(offsetX + (sw + data.dbgCwt)/2 * scale - 5, cwtY, 10, 10);
+    } else {
+        // ثقل جانبي
+        let railY = offsetY + data.distCarRailToDoor * scale;
+        ctx.fillRect(offsetX + 5 * scale + (sw-35-data.dbgCar)/2 * scale + 35*scale, railY, 10, 10);
+        ctx.fillRect(offsetX + 5 * scale + (sw-35+data.dbgCar)/2 * scale + 35*scale, railY, 10, 10);
+    }
+    
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "#000";
+    ctx.fillText("الباب داخل البئر فى الاعلى و الدلائل باللون الأحمر للصاعدة والأزرق للثقل", 410, 30);
+}
+
+</script>
+<div class="calculation-guide">
+    <h2><i class="fas fa-calculator"></i> معايير وطريقة الحساب الفنية</h2>
+
+    <div class="guide-section">
+        <h3>أولاً: المفاضلة واختيار مكان الثقل</h3>
+        <ul class="guide-list">
+            <li>في حالة زيادة عرض البئر عن عمقه يتم المفاضلة بين تركيب <strong>الثقل خلفي أو جانبي</strong>.</li>
+            <li>أساس المفاضلة هو <strong>صافي مساحة الصاعدة الأكبر</strong> ومدى قرب شكل الأرضية من الشكل المربع.</li>
+            <li>عرض الصاعدة = المسافة بين دليلي الصاعدة ناقص 10 سم.</li>
+            <li>عمق الصاعدة = المسافة من نهاية عتبة الباب الداخلي (نهاية المدخل) ومؤخرة الصاعدة فيما يسمى العمق بدون المدخل.</li>
+           <li>مساحة ارضية الصاعدة  = عمق الصاعدة مضروبا فى عرض الصاعدة بالمتر المربع.</li>  
+           <li> عدد الركاب المناسب للمساحة = مساحة ارضية الصاعدة مقسومة على 0.24.</li> 
+           <li> حمولة الركاب = عدد الركاب مضروبا فى 80.</li>
+        </ul>
+    </div>
+
+    <div class="guide-section">
+        <h3>ثانياً: حسابات العمق (الخصومات المتبعة)</h3>
+        <ul class="guide-list">
+            <li><strong>خلوص العتبة:</strong> 3 سم (أوتوماتيك)، 2.5 سم (فولدينج)، 2 سم (شعاع ضوئي - بدون باب داخلى).</li>
+            <li><strong>عمق عتبة الباب الداخلي:</strong> 11 سم ثابتة.</li>
+            <li><strong>سمك الباب الخارجي:</strong> 6 سم (نصف أوتوماتيك) أو 15 سم (أوتوماتيك).</li>
+            <li><strong>الثقل الخلفي:</strong> مسافة 15 سم بين دليل الثقل والحائط، و15 سم بين دليل الثقل ومؤخرة الصاعدة.</li>
+            <li><strong>الثقل الجانبى:</strong> مسافة 6 سم خلوص بين مؤخرة الصاعدة والحائط الخلفى للبئر</li>
+            <li><strong>مكان دليل الصاعدة:</strong> يقع في منتصف المسافة بين نهاية عتبة الصاعدة (المدخل) ومؤخرة الصاعدة على اعتبار ان وزن المدخل والباب مهمل وهى حالة تناسب الباب الفولدينج او عدم تركيب باب داخلى.</li>
+        </ul>
+    </div>
+
+    <div class="guide-section">
+        <h3>ثالثاً: حسابات العرض والجانبي</h3>
+        <ul class="guide-list">
+            <li><strong>قطعة التثبيت (الكابولي):</strong> 5 سم من كل جانب (يمين ويسار).</li>
+            <li><strong>مقاس الدلائل:</strong> 7 سم لدليل الصاعدة، و6 سم لدليل الثقل من كل جانب.</li>
+            <li><strong>الثقل الجانبي:</strong> خصم 5 سم للكمرة الفاصلة، و30 سم خلوص للثقل (15 سم يمين ويسار الدليل).</li>
+            <li>المسافة المتبقية بعد الخصومات هي المسافة الصافية بين الدلائل (DBG).</li>
+        </ul>
+    </div>
+    <div class="guide-section">
+        <h3>رابعا: قواعد ومعايير التحقق من توافق الباب الأوتوماتيك</h3>
+        <ul class="guide-list">
+            <li>في حالة <strong>الثقل الخلفي:</strong> يجب ألا يزيد (فتحة الباب + 7 سم) عن <strong>نصف عرض البئر</strong>.</li>
+            <li>في حالة <strong>الثقل الجانبي (باب سنتر):</strong> يجب ألا يزيد (فتحة الباب + 7 سم) عن <strong>(نصف المسافة بين دليلى الصاعدة + 12 سم)</strong>.</li>
+            <li>في حالة <strong>الثقل الجانبي (باب جانبي):</strong> يجب ألا يزيد (فتحة الباب + 7 سم) عن <strong>(نصف نصف المسافة بين دليلى الصاعدة + 12 + 35 سم)</strong> لضمان التخزين جهة الثقل.</li>
+            <li><strong>⚠️ لا يراعى التطبيق امكانية ترحيل الباب الاتوماتيك</strong></li>
+        </ul>
+    </div>
+    <div class="guide-section">
+        <h3>خامسا: التعامد والسنترة (تنزيل الخيوط)</h3>
+        <ul class="guide-list">
+            <li>مركز منتصف المسافة بين دليلي الصاعدة يتعامد تماماً مع مركز منتصف فتحة الباب الخارجى كحالة مفضلة ولكن ربما يناسب ترحيل الباب يمين او يسار حسب ظروف الموقع.</li>
+            <li>في الثقل الخلفي: يتعامد مركز دليلي الصاعدة مع مركز منصف دليلي الثقل كحالة مفضلة ولكن ربما يناسب ترحيل الثقل يمين او يسار حسب ظروف الموقع.</li>
+            <li>في الثقل الجانبي: يتعامد مركز دليلي الصاعدة مع مركز دليلي الثقل مع تساوى المسافات للحوائط الجانبية كحالة مفضلة ولكن ربما يناسب ترحيل الثقل يمين او يسار حسب ظروف الموقع.</li>
+            <li>في الثقل الجانبي مع باب اتوماتيك: يناسب ترحيل الثقل ناحية الحائط الخلفى (يتم خصم الخلوص بين عتبة الباب الداخلى والخارجى وسمك الباب الداخلى وسمك الباب الخارجى ومسافة 5 سم خلوص بين نهاية عتبة الباب الداخلى وقطعة تتثبيت دليل الثقل لتلافى الاحتكاك بين جسم ثابت وجسم متحرك ).</li>
+            <li>مقاس فتحة الباب الداخلي يجب أن يتساوى مع مقاس الباب الخارجى الا فى بعض حالات الباب الفولدينج عندما تكون فتحته اكبر 5 سم عن فتحة الباب الخارجى.</li>
+        </ul>
+        <h3>سادسا: توجيهات ومحاذير</h3>
+        <ul class="guide-list">
+        <li>التطبيق يناسب مصاعد التجميع فقط وغير معنى بأى شكل من الاشكال بمصاعد الباكدج.</li>
+        <li>لا يراعى التطبيق ميول المبنى والتى تكون عادة بمعدل نصف سم من طابق الى اخر او ما يقارب 3 سم لكل سبعة طوابق فى ناحيتى العمق والعرض وربما تزيد.</li>
+        <li>يلزم تنزيل الخيوط بشكل مبدئى ثم مسح البئر للتحقق من ادنى خلوص مسموح قبل اعتماد نتائج التطبيق ومباشرة العمل.</li>
+        <li>نتائج التطبيق تعتبر استرشادية الى حين التحقق من مدى ملائمتها للموقع وظروف التركيب بواسطة الفنى الخبير او المسئول .</li>
+        <li>تختلف مقاسات المهمات وانماط التركيب وطرق تنزيل الخيوط من شركة الى اخرى.</li>
+        </ul>
+    </div>
+
+    <div class="footer-signature">
+        تصميم وإعداد: <strong>طلعت عتمان - ايلاف للمصاعد - مدونة المصاعد</strong>
+    </div>
+</div>
+</body>
+</html>
